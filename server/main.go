@@ -46,20 +46,17 @@ func handleClient(conn net.Conn) {
 	}()
 	buffer := make([]byte, 1024)
 	for {
-		// Read data from the connection
 		n, err := conn.Read(buffer)
 		if err != nil {
 			if err != io.EOF {
 				fmt.Println("Error reading from connection:", err)
 			}
-			break // Exit the loop if there's an error or EOF
+			break
 		}
 
-		// Extract the message (the first n bytes)
 		message := string(buffer[:n])
 		fmt.Println("Received:", message)
 
-		// Broadcast the message to other clients (assuming a broadcast function)
 		broadcastMessage(message, conn)
 	}
 }
