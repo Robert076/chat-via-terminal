@@ -14,20 +14,23 @@ var (
 
 func main() {
 	ln, err := net.Listen("tcp", ":8080")
-	// ln is a pointer to net.TCPListener
 
 	if err != nil {
-		fmt.Println(err)
-		return
+		fmt.Println("Error when calling net.Listen in main()")
 	}
+
+	fmt.Println("Server is listening on port 8080...")
 	defer ln.Close()
-	fmt.Println("Server started on port 8080")
 
 	for {
 		conn, err := ln.Accept()
+
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("Error accepting a new connection")
+			break
 		}
+
+		fmt.Println("New connection accepted from ", conn)
 
 		clientsMu.Lock()
 		clients[conn] = true
@@ -44,29 +47,29 @@ func handleClient(conn net.Conn) {
 		clientsMu.Unlock()
 		conn.Close()
 	}()
+
 	buffer := make([]byte, 1024)
 	for {
 		n, err := conn.Read(buffer)
 		if err != nil {
 			if err != io.EOF {
-				fmt.Println("Error reading from connection:", err)
+				fmt.Println("Error reading from client")
 			}
 			break
 		}
-
 		message := string(buffer[:n])
-		fmt.Println("Received:", message)
+		fmt.Println("Received: ", message)
 
-		broadcastMessage(message, conn)
+		broadcastMessage(conn, message)
 	}
 }
 
-func broadcastMessage(message string, sender net.Conn) {
+func broadcastMessage(sender net.Conn, message string) {
 	clientsMu.Lock()
 	defer clientsMu.Unlock()
-	for conn := range clients {
-		if conn != sender {
-			_, _ = fmt.Fprintln(conn, message)
+	for client := range clients {
+		if client != sender {
+			_, _ = fmt.Fprintln(client, message)
 		}
 	}
 }
